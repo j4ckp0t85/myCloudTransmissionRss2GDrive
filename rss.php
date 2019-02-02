@@ -41,7 +41,7 @@ $trans = new Transmission($server, $port, $rpcPath, $user, $password);
 
 
 				// PROGRAM
-
+if ((json_decode($trans->freespace())->arguments->{'size-bytes'})>32212254720){ //avoid things to get fucked up adding torrents that will exceed free space available. required at least x bytes of free space 
 			  //RSS MONITORING (IF NEW TORRENT FOUND, ADD IT TO TRANSMISSION)
 $torrents = $trans->getRssItems($rss); //filter inside this function called (add to transmission only if matched specific strings)
 foreach ($torrents as $torrent) {
@@ -58,7 +58,7 @@ foreach ($torrents as $torrent) {
 			printf("%s: success add: %s\n", date('Y-m-d H:i:s'), $torrent['title']);
 		}
 	} 
-
+}
 
 
 

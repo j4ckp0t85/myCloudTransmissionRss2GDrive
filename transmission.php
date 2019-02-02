@@ -21,6 +21,13 @@ class Transmission
             $isEncode ? 'metainfo' : 'filename' => $url,
         )));
     }
+    
+         
+    public function freespace(){ //space sentinel
+		return $this->request("free-space", array(
+			'path' => '/mnt/HD/HD_a2/<transmission_download_dir>')
+        );		
+	}
 	
     public function status()
     {
