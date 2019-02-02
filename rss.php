@@ -65,8 +65,10 @@ foreach ($torrents as $torrent) {
            //TORRENT MONITORING (IF FINISHED,UPLOAD TO DRIVE FOLDER)
 if(!file_exists('torrent.lock')){
 	$obj=json_decode($trans->status());
-
-	for($i=1; $i<=$obj->arguments->torrentCount; $i++) {
+	$torrentCount=($obj->arguments->{'current-stats'}->{'filesAdded'}>$obj->arguments->torrentCount)?$obj->arguments->{'current-stats'}->{'filesAdded'}:$obj->arguments->torrentCount; //fix for cycle mismatch (torrent id over torrenCount on torrent removal)
+	
+	//for($i=1; $i<=$obj->arguments->torrentCount; $i++) {
+	for($i=1; $i<=(int)$torrentCount; $i++) {	
 		
 		$obj2=json_decode($trans->torrentStatus($i));
 		
