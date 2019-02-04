@@ -8,7 +8,7 @@ This script is written in php and is based on
   
 It fetches RSS from one or more RSS sources, add torrents to the Transmission client running on the nas and upload finished torrent to Google Drive user space (root or a specific folder).
 
-Based on a reliable network environment for small files (missing resume implementation).
+Resume supported. 
 
 Approach used: for small files (max 256M) load direcly in memory and upload, for bigger files use chunks approach.
 
