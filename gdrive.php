@@ -278,3 +278,148 @@ function listFiles($service) {
 		}
 	}		
 }
+
+function uploadLargeToFolderResumable ($client,$service,$folderId,$fileName) 
+{
+	$resumableJsonPath='/mnt/HD/HD_a2/<path_to_program_folder>/';
+	
+	$file = new Google_Service_Drive_DriveFile(array(
+		'name' => $fileName,
+		'parents' => array($folderId)
+	));
+	
+	
+	$client->setDefer(true);
+	$chunkSize = 10 * 1024 * 1024;
+	$mimeType=mime_content_type('/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName);
+	$fileSize=exec('stat -c %s "'.'/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName.'"');
+	
+	$request = $service->files->create(
+	    $file,
+	    [
+	        "mimeType" => $mimeType,
+	        "uploadType" => "resumable",
+	        'fields' => 'id'
+	    ]
+	);
+	
+	$media = new Google_Http_MediaFileUpload($client, $request, $mimeType, null, true, $chunkSize);
+    $media->setFileSize($fileSize);
+	$media->setChunkSize($chunkSize);
+	
+	$resumeUri=$media->getResumeUri();
+	
+	$upload=array(
+		'name' => $fileName,
+		'resumeUri' => $resumeUri
+	);
+	
+	file_put_contents("resumableupload.json",json_encode($upload));
+	
+	try {
+		$status = false;
+		$handle = fopen('/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName, "rb");
+		$k = 1;
+		while (!$status && !feof($handle)) {
+		    $chunk = fread($handle, $chunkSize);
+		    try {
+		        $status = $media->nextChunk($chunk);
+		        print("byte ".$media->getProgress(). " \n");
+		    } catch (Exception $e) {
+		        //echo 'error - ' . $e->getMessage();
+		    }
+		}
+		$result = false;
+		if ($status != false) {
+		    $result = $status;
+			unlink($resumableJsonPath.'resumableupload.json');
+			unlink('/tmp/torrent.lock');
+		}
+		fclose($handle);
+		$client->setDefer(false);
+		} catch (Exception $e) {
+         //print('GoogleDrive error: ' . $e->getMessage());
+         unlink('/tmp/torrent.lock');
+     }
+
+}
+
+function resumeToFolder ($client,$service,$folderId) {
+	
+	$resumableJsonPath='/mnt/HD/HD_a2/<path_to_program_folder>/';
+	
+	$uploadData=json_decode(file_get_contents($resumableJsonPath.'resumableupload.json')); //fetch data from local json file
+
+	
+	$fileName=$uploadData->name;
+	$resumeUri=$uploadData->resumeUri;
+	
+	$file = new Google_Service_Drive_DriveFile(array(
+		'name' => $fileName,
+		'parents' => array($folderId)
+	));
+	
+
+	$client->setDefer(true);
+	$chunkSize = 10 * 1024 * 1024;
+	$mimeType=mime_content_type('/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName);
+	$fileSize=exec('stat -c %s "'.'/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName.'"');
+	
+		
+	$request = $service->files->create(
+	    $file,
+	    [
+	        "mimeType" => $mimeType,
+	        "uploadType" => "resumable",
+	        'fields' => 'id'
+	    ]
+	);
+	
+
+	
+	$media = new Google_Http_MediaFileUpload($client, $request, $mimeType, null, true, $chunkSize);
+
+	$media->setFileSize($fileSize);
+	$media->setChunkSize($chunkSize);
+	
+	$upStatus=$media->resume($resumeUri); 
+	
+	if($upStatus==false){ //false = upload incomplete
+		try {
+			$status = false;
+	
+			$handle = fopen('/mnt/HD/HD_a2/<transmission_download_dir>/'.$fileName, "rb");
+			fseek($handle, $media->getProgress());   
+			
+			while (!$status && !feof($handle)) {
+		   	 $chunk = fread($handle, $chunkSize);
+		   	 
+		   	 try {
+		        	$status = $media->nextChunk($chunk);
+					print("byte ".$media->getProgress(). " \n");
+		    	} catch (Exception $e) {
+		        	//echo 'error - ' . $e->getMessage();
+		    	}
+				
+			}
+			$result = false;
+			if ($status != false) {
+		    	$result = $status;
+				unlink($resumableJsonPath.'resumableupload.json');
+				unlink('/tmp/torrent.lock');
+			}
+			fclose($handle);
+			$client->setDefer(false);
+		}
+		catch (Exception $e) {
+         	//print('GoogleDrive error: ' . $e->getMessage());
+		 	unlink('/tmp/torrent.lock');
+     		}
+	}
+	else {
+		unlink($resumableJsonPath.'resumableupload.json'); //upload of this file was already completed
+	}	
+	
+}
+
+?>

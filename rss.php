@@ -63,38 +63,46 @@ foreach ($torrents as $torrent) {
 
 
            //TORRENT MONITORING (IF FINISHED,UPLOAD TO DRIVE FOLDER)
-if(!file_exists('torrent.lock')){
-	$obj=json_decode($trans->status());
-	$torrentCount=($obj->arguments->{'current-stats'}->{'filesAdded'}>$obj->arguments->torrentCount)?$obj->arguments->{'current-stats'}->{'filesAdded'}:$obj->arguments->torrentCount; //fix for cycle mismatch (torrent id over torrenCount on torrent removal)
+if(!file_exists('/tmp/torrent.lock')){ // put this on /tmp for unattended shutdown fix
 	
-	//for($i=1; $i<=$obj->arguments->torrentCount; $i++) {
-	for($i=1; $i<=(int)$torrentCount; $i++) {	
+	if (file_exists('resumableupload.json')){ //first check if there is a file upload that need to be resumed
+		file_put_contents("/tmp/torrent.lock",'1');	 //avoid other uploads until this one is finished
+		resumeToFolder($client,$service,$targetFolderId); 
+	}	
+	else { //otherwhise, check torrent list
 		
-		$obj2=json_decode($trans->torrentStatus($i));
+		$obj=json_decode($trans->status());
+	
+		$torrentCount=($obj->arguments->{'current-stats'}->{'filesAdded'}>$obj->arguments->torrentCount)?$obj->arguments->{'current-stats'}->{'filesAdded'}:$obj->arguments->torrentCount; //fix for cycle mismatch (torrent id over torrenCount on torrent removal)
 		
-		if($obj2->arguments->torrents['0']->percentDone==1) { //download torrent completed?
-			print ($obj2->arguments->torrents['0']->name."\n"); 
-			print ($obj2->arguments->torrents['0']->totalSize."\n"); 
-			if((searchFile($service,$targetFolderId,$obj2->arguments->torrents['0']->name)==0) and (((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_1>'))!==false) or ((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_2>'))!==false))) { //filter and upload only torrent that matches specific string. look if file is already present 
-				if($obj2->arguments->torrents['0']->totalSize<=268435456) { //upload call for small file 
-					uploadToFolder($service,$targetFolderId,$obj2->arguments->torrents['0']->name);		
-			    }
-				else { //upload call for big file
-					file_put_contents("torrent.lock",'1'); //temp lock file to avoid multiple uploads of big file (removed when upload done)
-					uploadLargeToFolder($client,$service,$targetFolderId,$obj2->arguments->torrents['0']->name);
-				}
-			}
-			else {
-				print("file already uploaded \n");
-				}
-				
-			//ratio policy can go eventually here
-			// ... $trans->torrentRemove($obj2->arguments->torrents['0']->id);
+		//for($i=1; $i<=$obj->arguments->torrentCount; $i++) {
+		for($i=1; $i<=(int)$torrentCount; $i++) {	
+			$obj2=json_decode($trans->torrentStatus($i));
 			
+			if($obj2->arguments->torrents['0']->percentDone==1) { //download torrent completed?
+				
+				if((searchFile($service,$targetFolderId,$obj2->arguments->torrents['0']->name)==0) and (((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_1>'))!==false) or ((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_2>'))!==false))) {
+					
+					if($obj2->arguments->torrents['0']->totalSize<=268435456) {
+						uploadToFolder($service,$targetFolderId,$obj2->arguments->torrents['0']->name);		
+				    }
+					else {
+						file_put_contents("/tmp/torrent.lock",'1'); //avoid other uploads until this one is finished
+						uploadLargeToFolderResumable($client,$service,$targetFolderId,$obj2->arguments->torrents['0']->name); //start a new big file resumable upload
+					}
+
+				}
+				else {
+					print("file already uploaded \n");
+					}
+					//ratio policy can go eventually here
+					// ... $trans->torrentRemove($obj2->arguments->torrents['0']->id);
+			}
 		}
 	}
-}
+	
+	}
 else {
 		print("upload of a big file is in progress, postponed \n");
-	}
+}
 ?>
