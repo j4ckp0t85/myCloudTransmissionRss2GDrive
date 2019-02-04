@@ -75,7 +75,7 @@ if(!file_exists('torrent.lock')){
 		if($obj2->arguments->torrents['0']->percentDone==1) { //download torrent completed?
 			print ($obj2->arguments->torrents['0']->name."\n"); 
 			print ($obj2->arguments->torrents['0']->totalSize."\n"); 
-			if((searchFile($service,$targetFolderId,$obj2->arguments->torrents['0']->name)==0) and ((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_1>'))<>false) or ((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_2>'))<>false)) { //filter and upload only torrent that matches specific string. look if file is already present 
+			if((searchFile($service,$targetFolderId,$obj2->arguments->torrents['0']->name)==0) and (((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_1>'))!==false) or ((strpos($obj2->arguments->torrents['0']->name,'<torrent_search_string_2>'))!==false))) { //filter and upload only torrent that matches specific string. look if file is already present 
 				if($obj2->arguments->torrents['0']->totalSize<=268435456) { //upload call for small file 
 					uploadToFolder($service,$targetFolderId,$obj2->arguments->torrents['0']->name);		
 			    }
