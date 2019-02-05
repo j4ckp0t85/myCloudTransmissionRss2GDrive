@@ -521,7 +521,7 @@ function uploadFolder($client,$service,$parentFolderId,$folderName) {
 	else
 		$folderId=createFolder($service,$parentFolderId,$folderName);
 	$files=array_diff(scandir('/mnt/HD/HD_a2/<transmission_download_dir>/'.$folderName),array('.','..'));
-	var_dump($files);
+	//var_dump($files);
 	foreach($files as $file) {
 		
 		$mimeType=mime_content_type('/mnt/HD/HD_a2/<transmission_download_dir>/'.$folderName.'/'.$file);
