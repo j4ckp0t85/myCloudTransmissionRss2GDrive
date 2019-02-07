@@ -47,7 +47,7 @@ $torrents = $trans->getRssItems($rss); //filter inside this function called (add
 foreach ($torrents as $torrent) {
 		$lock_file = $stash.'/'.base64_encode($torrent['guid']);
 		if (file_exists($lock_file)) {
-			printf("%s: skip add: %s\n", date('Y-m-d H:i:s'), $torrent['title']);
+			//printf("%s: skip add: %s\n", date('Y-m-d H:i:s'), $torrent['title']);
 			continue;
 		}
 		
@@ -55,7 +55,7 @@ foreach ($torrents as $torrent) {
 		
 		if ($response->result == 'success') {
 			file_put_contents($lock_file, '1');
-			printf("%s: success add: %s\n", date('Y-m-d H:i:s'), $torrent['title']);
+			//printf("%s: success add: %s\n", date('Y-m-d H:i:s'), $torrent['title']);
 		}
 	} 
 }
