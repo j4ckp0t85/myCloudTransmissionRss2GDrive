@@ -173,7 +173,7 @@ function uploadLargeToRoot($client,$service,$largeFile)
     // Reset to the client to execute requests immediately in the future.
     $client->setDefer(false);	
 	unlink("/tmp/torrent.lock");
-	//printf("File ID: %s\n", $file->id);
+	//printf("File ID: %s\n", $result->id);
 	
 }
 
@@ -222,8 +222,7 @@ function uploadLargeToFolder($client,$service,$folderId,$largeFile)
     // that has been uploaded.
     $result = false;
     if($status != false) {
-                      $result = $status;                
-
+       $result = $status;                
     }
 
 
@@ -231,7 +230,7 @@ function uploadLargeToFolder($client,$service,$folderId,$largeFile)
     // Reset to the client to execute requests immediately in the future.
     $client->setDefer(false);	
 	unlink("/tmp/torrent.lock");
-	printf("File ID: %s\n", $file->id);
+	printf("File ID: %s\n", $result->id);
 }
 
 function readChunk ($handle, $chunkSize)
